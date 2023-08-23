@@ -77,7 +77,7 @@ class Application(Frame):
 
     def update2DCmap(self):
         rgb = (255*self.TwoDCmap).astype('u1')
-        img = Image.fromarray(rgb).resize((256,256))
+        img = Image.fromarray(np.flip(rgb, axis=0)).resize((256,256))
         tkimg = ImageTk.PhotoImage(img)
         self.cmap2D_image.configure(image=tkimg, height=256, width=256)
         self.cmap2D_image.image = tkimg
