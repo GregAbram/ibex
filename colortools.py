@@ -53,17 +53,24 @@ def load_colormap_csv(name):
     return (np.vstack(cmap)).astype('f4')
 
 def load_colormap_json(fname):
+    pdb.set_trace()
     with open(fname) as f:
         j = json.load(f)
+
+        if isinstance(j, dict):
+          j = j['colormaps']
 
         if isinstance(j, list):
             j = j[0]
 
-        if 'RGBPoints' not in j:
-            print(name, "not a colormap?")
-            return None
+        if 'points' in j:
+          icmap = np.vstack([[i['x'], i['r'], i['g'], i['b']] for i in j['points']])
+        elif 'RGBPoints' not in j:
+          icmap = np.array(j['RGBPoints']).reshape(-1,4)
+        else:
+          print(name, "not a colormap?")
+          return None
 
-        icmap = np.array(j['RGBPoints']).reshape(-1,4)
         icmap = icmap[icmap[:,0].argsort()]
         i0 = 0
         i1 = 1
