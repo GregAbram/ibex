@@ -87,6 +87,7 @@ class IBEX:
 
   def Normalize(self):
     minf, maxf, mine, maxe = self.Ranges()
+    self.errors = self.errors / self.fluxes
     self.fluxes = (self.fluxes - minf) / (maxf - minf)
     self.errors = (self.errors - mine) / (maxe - mine)
 
