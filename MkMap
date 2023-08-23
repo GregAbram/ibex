@@ -1,0 +1,94 @@
+#! /usr/bin/env python3
+
+import sys
+import pdb
+import numpy as np
+import matplotlib.pyplot as plt
+import colortools as ct
+
+def CreateColormap2D(fmap, emap, omap):
+    a = ct.interpolate_map(fmap, 1024)
+    b = ct.interpolate_map(emap, 1024)
+    o = ct.interpolate_map(omap, 1024)
+    columns = []
+    for f in range(1024):
+      columns.append((1 - o[f]) * a + o[f] * b)
+    cmap2D = np.column_stack(columns).reshape(1024,1024,3)
+    return cmap2D.astype('f4')
+
+def syntax(a):
+  print("syntax: %s [ -nodisplay ] fmap [ -e emap ] [ -E value ] [ -o omap ]" % a)
+  print("where:")
+  print("  -nodisplay       prevents it from popping up a window to show 2D cmap")
+  print("  -e emap          colormap to apply at full error - defaults to solid gray")
+  print("  -E emap          value for solid gray in abscence of emap - default to 0.4")
+  print("  -o omap          opacity transfer function - defaults to linear")
+  sys.exit(1)
+  
+if len(sys.argv) == 1:
+  syntax(sys.argv[0])
+  sys.exit(1)
+
+if sys.argv[1] == '-h' or sys.argv[1] == '-help':
+  syntax(sys.argv[0])
+  sys.exit(1)
+
+mode = 1
+mode_str = 'opacity'
+display = True
+fmap = None
+emap = None
+omap = None
+val  = 0.4
+
+args = sys.argv[1:]
+while len(args) > 0:
+  if args[0] == '-nodisplay':
+    display = False
+    args = args[1:]
+  elif args[0] == '-e':
+    emap = args[1]
+    args = args[2:]
+  elif args[0] == '-E':
+    val = float(args[1])
+    args = args[2:]
+  elif args[0] == '-o':
+    omap = args[1]
+    args = args[2:]
+  elif fmap == None:
+    fmap = args[0]
+    args = args[1:]
+  else:
+    syntax(sys.argv[0])
+
+if fmap == None:
+  syntax(sys.argv[0])
+  sys.exit(0)
+
+f = fmap.split('/')[-1].rsplit('.',1)[0]
+fmap = ct.load_colormap(fmap)
+
+if emap:
+  e = fmap.split('/')[-1].rsplit('.',1)[0]
+  emap = ct.load_colormap(emap)
+else:
+  e = '%6.4f' % val
+  emap = ct.SolidGray(val)
+
+if omap:
+  o = omap.split('/')[-1].rsplit('.',1)[0]
+  omap = ct.load_opacitymap(omap)
+else:
+  o = 'linear'
+  omap = ct.LinearMap()
+
+cmap2D = CreateColormap2D(fmap, emap, omap).astype('f4')
+
+if display:
+  plt.axis('off')
+  plt.imshow(np.flipud(cmap2D*255).astype('u1'))
+  plt.show()
+
+oname = '%s-%s-%s.cmap2D' % (f, e, o)
+
+cmap2D.tofile(oname)

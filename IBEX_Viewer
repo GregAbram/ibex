@@ -1,0 +1,180 @@
+#! /usr/bin/env python3
+
+import sys, pdb, numpy as np, os
+from tkinter import filedialog
+from tkinter import *
+from tkinter.ttk import Separator
+from PIL import Image, ImageTk
+from ibex import IBEX
+import colortools as ct
+
+class Application(Frame):
+
+    def update2D(self):
+        f = (1023*self.current_flux).astype('u2')
+        e = (1023*self.current_relative_error).astype('u2')
+        rgb = (255*self.TwoDCmap[f,e]).astype('u1')
+        img = Image.fromarray(rgb).resize((720,360))
+        tkimg = ImageTk.PhotoImage(img)
+        self.resultImage.configure(image=tkimg, height=360, width=720)
+        self.resultImage.image = tkimg
+
+    def selectDataset(self, a):
+        ds = self.currentDataset.get()
+        indx = self.ibx.names.index(ds)
+        self.Update(indx)
+
+    def next(self):
+        if self.current_index == (len(self.ibx.names)-1):
+          self.Update(0)
+        else:
+          self.Update(self.current_index + 1)
+
+    def prev(self):
+        if self.current_index == 0:
+          self.Update(len(self.ibx.names)-1)
+        else:
+          self.Update(self.current_index - 1)
+
+    def update1D(self, v, label, cmap):
+        iv = (255*v).astype('u2')
+        cv = (255*cmap[iv]).astype('u1')
+        img = Image.fromarray(cv).resize((540,270))
+        tkimg = ImageTk.PhotoImage(img)
+        label.configure(image=tkimg, height=270, width=540)
+        label.image = tkimg
+
+    def Update(self, indx):
+        self.current_index = indx
+        self.currentDataset.set(ibx.names[indx])
+        n,self.current_flux,self.current_error = self.ibx.GetByIndex(indx)
+        self.current_relative_error = self.current_error / self.current_flux
+        self.current_flux = (self.current_flux - np.min(self.current_flux)) / (np.max(self.current_flux) - np.min(self.current_flux))
+        self.current_relative_error = (self.current_relative_error - np.min(self.current_relative_error)) / (np.max(self.current_relative_error) - np.min(self.current_relative_error))
+        self.update1D(self.current_flux, self.fluxImage, self.fluxCmap)
+        self.update1D(self.current_relative_error, self.errorImage, self.errorCmap)
+        self.update2D()
+
+    def updateFlux(self):
+        print('updateFlux')
+
+    def ChooseFluxCmap(self):
+        filename = filedialog.askopenfilename(initialdir=os.getcwd(),
+                        title = "Select a colormap",
+                        filetypes = (("1D map files", "*.json *.xml"), ("all files", "*.*")))
+        self.fluxCmapWidget.configure(text=filename)
+        self.fluxCmap = ct.load_colormap(filename)
+        self.update1D(self.current_flux, self.fluxImage, self.fluxCmap)
+
+    def Choose2DCmap(self):
+        filename = filedialog.askopenfilename(initialdir = os.getcwd(),
+                        title = "Select a colormap",
+                        filetypes = (("2D map files", "*.cmap2D"), ("all files", "*.*")))
+        self.TwoDCmap = ct.ReadColormap2D(filename)
+        self.TwoDCmapWidget.configure(text=filename)
+        self.update2D()
+        
+
+    def ChooseErrorCmap(self):
+        filename = filedialog.askopenfilename(initialdir = os.getcwd(),
+                        title = "Select a colormap",
+                        filetypes = (("1D map files", "*.json *.xml"), ("all files", "*.*")))
+        self.errorCmapWidget.configure(text=filename)
+        self.errorCmap = ct.load_colormap(filename)
+        self.update1D(self.current_error, self.errorImage, self.errorCmap)
+
+    def Setup(self):
+        self.grid()
+        self.master.title("IBEX Viewer")
+
+        title0 = Label(self.master, text="Normalized Flux").grid(row=0, column=0, columnspan=2)
+
+        self.fluxImage = Label(self.master)
+        self.fluxImage.grid(row=1, column=0, columnspan=2)
+
+        f = Frame(self.master)
+        f.grid(row=2, column=0, columnspan=2, sticky='ewns')
+
+        a = Label(f, text='1D Colormap: ').pack(side=LEFT)
+
+        self.fluxCmapWidget = Label(f, text='GreyScale')
+        self.fluxCmapWidget.pack(side=LEFT)
+
+        b = Button(f, text="...", command=self.ChooseFluxCmap)
+        b.pack(side=LEFT)
+
+        hgap = Separator(self.master, orient='horizontal').grid(row=3, column=0, columnspan=2, sticky='ew')
+
+        title1 = Label(self.master, text="Normalized Relative Error").grid(row=4, column=0, columnspan=2)
+
+        self.errorImage = Label(self.master)
+        self.errorImage.grid(row=5, column=0, columnspan=2)
+
+        f = Frame(self.master)
+        f.grid(row=6, column=0, columnspan=2, sticky='ewns')
+
+        a = Label(f, text='1D Colormap: ').pack(side=LEFT)
+
+        self.errorCmapWidget = Label(f, text='GreyScale')
+        self.errorCmapWidget.pack(side=LEFT)
+
+        b = Button(f, text="...", command=self.ChooseErrorCmap)
+        b.pack(side=LEFT)
+
+        vgap = Separator(self.master, orient='vertical').grid(row=0, rowspan=6, column=3, sticky='ns')
+
+        ResultFrame = Frame(self.master)
+        ResultFrame.grid(row=0, column=4, rowspan = 5, columnspan = 3, sticky = W+E+N+S)
+
+        t1 = Label(ResultFrame, text="Result").pack(side=TOP)
+
+        self.resultImage = Label(ResultFrame)
+        self.resultImage.pack(side=TOP, fill=BOTH)
+
+        f = Frame(ResultFrame)
+        f.pack(side=TOP, fill=BOTH)
+
+        a = Label(f, text='2D Colormap: ').pack(side=LEFT)
+
+        self.TwoDCmapWidget = Label(f, text='GrayScale')
+        self.TwoDCmapWidget.pack(side=LEFT)
+
+        b = Button(f, text="...", command=self.Choose2DCmap)
+        b.pack(side=LEFT)
+
+        hgap = Separator(self.master, orient='horizontal').grid(row=7, column=0, columnspan=9, sticky='ew')
+
+        bottombox = Frame(self.master)
+        bottombox.grid(row=8, column=0, columnspan=6, sticky='ewns')
+        Label(bottombox, text="Dataset Name").pack(side=LEFT)
+
+        self.currentDataset = StringVar()
+        self.currentDataset.set(ibx.names[0])
+
+        drop = OptionMenu(bottombox, self.currentDataset, *ibx.names, command=self.selectDataset)
+        drop.pack(side=LEFT)
+
+        nxt = Button(bottombox, text='Next', command=self.next)
+        nxt.pack(side=RIGHT)
+
+        prv = Button(bottombox, text='Prev', command=self.prev)
+        prv.pack(side=RIGHT)
+
+    def __init__(self, ibx):
+        self.master = Tk()
+        self.ibx = ibx
+        Frame.__init__(self, self.master)
+        self.Setup()
+        r = np.arange(256)/255.0
+        self.fluxCmap = np.column_stack([r]*3)
+        self.errorCmap = np.column_stack([r]*3)
+        r = np.arange(1024)/1023.0
+        self.TwoDCmap = np.column_stack([r]*(3*1024))
+        self.Update(0)
+        
+ibx = IBEX.Read(sys.argv[1])
+res = ibx.resolution
+ibx.Normalize()
+
+app = Application(ibx)
+app.mainloop()
