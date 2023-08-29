@@ -53,7 +53,6 @@ def load_colormap_csv(name):
     return (np.vstack(cmap)).astype('f4')
 
 def load_colormap_json(fname):
-    pdb.set_trace()
     with open(fname) as f:
         j = json.load(f)
 
@@ -65,10 +64,10 @@ def load_colormap_json(fname):
 
         if 'points' in j:
           icmap = np.vstack([[i['x'], i['r'], i['g'], i['b']] for i in j['points']])
-        elif 'RGBPoints' not in j:
+        elif 'RGBPoints' in j:
           icmap = np.array(j['RGBPoints']).reshape(-1,4)
         else:
-          print(name, "not a colormap?")
+          print(fname, "not a colormap?")
           return None
 
         icmap = icmap[icmap[:,0].argsort()]
@@ -194,5 +193,17 @@ def ReadColormap2D(filename):
     with open(filename, 'rb') as f:
         c = np.fromfile(f, dtype='f4').reshape(1024,1024,3)
     return c
+
+def SaveColormap(cmap, name):
+    o = {}
+    o["ColorSpace"] = "RGB"
+    o["Name"] = name
+    o["NanColor"] = [ 0, 1, 1 ]
+    o["RGBPoints"] = [float(f) for f in cmap.flatten()]
+    o = json.dumps([o], indent=4)
+    with open('%s.json' % name, 'w') as outpt:
+      outpt.write(o)
+
+
 
 
