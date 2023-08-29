@@ -214,6 +214,10 @@ class Application(Frame):
         self.update2DCmap()
         self.Update(0)
         
+if len(sys.argv) != 2:
+  print('syntax: %s data.ibx' % sys.argv[0])
+  sys.exit(0)
+
 ibx = IBEX.Read(sys.argv[1])
 res = ibx.resolution
 ibx.Normalize()
