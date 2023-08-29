@@ -4,21 +4,36 @@ import sys, pdb
 import colortools as ct
 from ibex import IBEX
 from PIL import Image
+import numpy as np
 
 def syntax():
-  print("syntax: %s [-s scale] data.ibx" % sys.argv[0])
+  print("syntax: %s [-l level] [-s scale] [-m]  data.ibx" % sys.argv[0])
   sys.exit(1)
 
 cmap = ct.load_colormap('%s/floatpng.xml' % __file__.rsplit('/',1)[0])
 
 scale = 1
 ibx = None
+merge = False
+level = False
 
 args = sys.argv[1:]
 while len(args) > 0:
   if args[0] == '-s':
     scale = float(args[1])
     args = args[2:]
+  elif args[0] == '-l':
+    if merge:
+      print('merge and level are mutually exclusive')
+      sys.exit(0)
+    level = args[1]
+    args = args[2:]
+  elif args[0] == '-m':
+    if level:
+      print('merge and level are mutually exclusive')
+      sys.exit(0)
+    merge = True
+    args = args[1:]
   elif not ibx:
     ibx = IBEX.Read(args[0])
     args = args[1:]
@@ -28,12 +43,75 @@ while len(args) > 0:
 if not ibx:
   syntax()
 
-ibx.Normalize()
+data = {}
+levels = []
 
-for i in range(len(ibx.names)):
-  n,f,e = ibx.GetByIndex(i)
-  rgb = cmap[(255*f).astype('i2')]
+if level:
+  ibx1 = IBEX()
+  for i in range(ibx.Count()):
+    n,f,e = ibx.GetByIndex(i)
+    l = n.split('_')[-1]
+    if l == level:
+        ibx1.Add(n, f, e)
+
+  ibx1.Normalize()
+
+  flux = ibx1.fluxes.reshape(-1, ibx.fluxes.shape[2])
+
+  rgb = cmap[(255*flux).astype('i2')]
   img = Image.fromarray((255*rgb).astype('u1'))
-  if scale != 0:
-    img = img.resize((ibx.resolution[0]*scale, ibx.resolution[1]*scale))
-  img.save('%s_F.png' % n)
+  img.save('level_%s.png' % level)
+
+elif merge:
+
+  ibx.Normalize()
+
+  for i in range(len(ibx.names)):
+    n,f,e = ibx.GetByIndex(i)
+    y = int(n.split('_')[2][:4])
+    l = int(n.split('_')[-1].split('.')[0])
+    if y not in data.keys():
+      data[y] = {}
+    data[y][l] = f
+  for y in sorted(data.keys()):
+    l = sorted(data[y].keys())
+    for i in l:
+      if i not in levels:
+        levels.append(i)
+  years = sorted(data.keys())
+
+  data_grid = [[None]*len(levels)]*len(years)
+
+  for i in range(len(ibx.names)):
+    n,f,e = ibx.GetByIndex(i)
+    y = int(n.split('_')[2][:4])
+    l = int(n.split('_')[-1].split('.')[0])
+    r = years.index(y)
+    c = levels.index(l)
+    row = data_grid[r]
+    row = [f if i == c else row[i] for i in range(len(levels))]
+    data_grid[r] = row
+
+  for r in range(len(years)):
+    for c in range(len(levels)):
+      if not isinstance(data_grid[r][c], np.ndarray):
+        data_grid[r][c] = np.zeros(ibx.resolution[0]*ibx.resolution[1]).reshape(ibx.resolution)
+
+  rows = []
+  for row in data_grid:
+    rows.append(np.hstack(row))
+
+  data = np.vstack(rows)
+
+  rgb = cmap[(255*data).astype('i2')]
+  img = Image.fromarray((255*rgb).astype('u1'))
+  img.save('montage_all.png')
+
+else:
+  for i in range(len(ibx.names)):
+    n,f,e = ibx.GetByIndex(i)
+    rgb = cmap[(255*f).astype('i2')]
+    img = Image.fromarray((255*rgb).astype('u1'))
+    if scale != 0:
+      img = img.resize((ibx.resolution[0]*scale, ibx.resolution[1]*scale))
+    img.save('%s_F.png' % n)
