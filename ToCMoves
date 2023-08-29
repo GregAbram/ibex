@@ -110,8 +110,9 @@ elif merge:
 else:
   for i in range(len(ibx.names)):
     n,f,e = ibx.GetByIndex(i)
+    f = (f - np.min(f)) / (np.max(f) - np.min(f))
     rgb = cmap[(255*f).astype('i2')]
     img = Image.fromarray((255*rgb).astype('u1'))
     if scale != 0:
-      img = img.resize((ibx.resolution[0]*scale, ibx.resolution[1]*scale))
+      img = img.resize((int(ibx.resolution[1]*scale), int(ibx.resolution[0]*scale)))
     img.save('%s_F.png' % n)
