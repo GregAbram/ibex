@@ -60,7 +60,7 @@ class Application(Frame):
     def ChooseFluxCmap(self):
         filename = filedialog.askopenfilename(initialdir=os.getcwd(),
                         title = "Select a colormap",
-                        filetypes = (("1D map files", "*.json *.xml"), ("all files", "*.*")))
+                        filetypes = (("1D map files", "*.csv *.json *.xml"), ("all files", "*.*")))
         self.fluxCmapWidget.configure(text=filename)
         self.fluxCmap = ct.load_colormap(filename)
         self.update1D(self.current_flux, self.fluxImage, self.fluxCmap)
@@ -105,7 +105,7 @@ class Application(Frame):
     def ChooseErrorCmap(self):
         filename = filedialog.askopenfilename(initialdir = os.getcwd(),
                         title = "Select a colormap",
-                        filetypes = (("1D map files", "*.json *.xml"), ("all files", "*.*")))
+                        filetypes = (("1D map files", "*.csv *.json *.xml"), ("all files", "*.*")))
         self.errorCmapWidget.configure(text=filename)
         self.errorCmap = ct.load_colormap(filename)
         self.update1D(self.current_error, self.errorImage, self.errorCmap)
