@@ -21,13 +21,17 @@ class IBEX:
       return len(self.names)
 
   def Add(self, name, flux, err):
-      if self.Count() > 0 and flux.shape != self.resolution:
-        raise Exception("Data shape mismatch:", self.resolution, flux.shape)
-      else:
+      if self.Count() == 0:
         self.resolution = flux.shape
+        self.names = [name]
+        self.fluxes = np.expand_dims(flux,0)
+        self.errors = np.expand_dims(err,0)
+      else:
+        if self.Count() > 0 and flux.shape != self.resolution:
+          raise Exception("Data shape mismatch:", self.resolution, flux.shape)
         self.names.append(name)
-        self.fluxes.append(flux)
-        self.errors.append(err)
+        self.fluxes = np.vstack((self.fluxes, np.expand_dims(flux,0)))
+        self.errors = np.vstack((self.errors, np.expand_dims(err,0)))
 
   def AddFromCSV(self, csv):
     name = csv.split('/')[-1].rsplit('.', 1)[0]
