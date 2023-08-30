@@ -204,6 +204,19 @@ def SaveColormap(cmap, name):
     with open('%s.json' % name, 'w') as outpt:
       outpt.write(o)
 
-
-
-
+def SaveColormapXML(cmap, name):
+    root = ET.Element('Colormaps')
+    map = ET.SubElement(root, 'ColorMap')
+    map.set('space', 'RGB')
+    map.set('indexedLookup', 'false')
+    map.set('name', name)
+    for i in range(cmap.shape[0]):
+      x = i / (cmap.shape[0]-1)
+      point = ET.SubElement(map, 'Point')
+      point.set("x", "%f" % x)
+      point.set("o", "1")
+      point.set("r", "%f" % cmap[i][0])
+      point.set("g", "%f" % cmap[i][1])
+      point.set("b", "%f" % cmap[i][2])
+    with open("%s.xml" % name, 'w') as f:
+      f.write(ET.tostring(root).decode())
