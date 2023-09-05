@@ -56,7 +56,7 @@ class IBEX:
     for la,lo,f,e in zip(lat,lon,flux,err):
       farray[la][lo] = f
       earray[la][lo] = e
-    self.Add(name, farray, earray)
+    self.Add(name, np.flipud(farray), np.flipud(earray))
 
   def Write(self, file):
     f = open(file, 'wb')
