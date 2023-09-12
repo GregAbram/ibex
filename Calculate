@@ -1,0 +1,20 @@
+#! /usr/bin/env python3
+
+import sys,pdb
+from ibex import IBEX
+
+if len(sys.argv) == 1 or sys.argv[1] == '-h':
+  print("Example: %s data2.ibx foo \"ibex.Variable('flux') + ibex.Variable('flux_se')\" foo.ibx" % sys.argv[0])
+  sys.exit(1)
+
+idata = sys.argv[1]
+vname = sys.argv[2]
+vfunc = sys.argv[3]
+oname = sys.argv[4]
+
+ibex = IBEX.Read(sys.argv[1])
+f = lambda ibex: eval(vfunc)
+ibex.Calculate(vname, f)
+ibex.Write(oname)
+
+

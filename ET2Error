@@ -1,0 +1,64 @@
+#! /usr/bin/env python3
+
+import sys,pdb
+import numpy as np
+from ibex import IBEX
+
+left = 3
+right = 15
+maxo = 0.5
+exp = 1
+iname = None
+oname = None
+
+def syntax(a):
+  print("syntax: %s [options] iname oname")
+  print("options:")
+  print("  -l lowervalue          Below this value consider invalid (%f)" % left)
+  print("  -u uppervalue          Above this value consider valid (%f)" % right)
+  print("  -e exp                 Raise interpolant to this power (%f)" % exp)
+  print("  -o maxopacity          Opacicity to be appied to fully invalid data (%f)" % maxo)
+  print("  -h                     This message")
+  sys.exit(1)
+
+args = sys.argv[1:]
+while len(args) > 0:
+  a = args[0]
+  if a == '-h':
+    syntax(sys.argv[0])
+  elif a == '-e':
+    exp = float(args[1])
+    args = args[2:]
+  elif a == '-o':
+    maxo = float(args[1])
+    args = args[2:]
+  elif a == '-l':
+    left = float(args[1])
+    args = args[2:]
+  elif a == '-u':
+    right = float(args[1])
+    args = args[2:]
+  elif iname == None:
+    iname = args[0]
+    args = args[1:]
+  elif oname == None:
+    oname = args[0]
+    args = args[1:]
+  else:
+    syntax(sys.argv[0])
+
+if not iname or not oname:
+  syntax(sys.argv[0])
+    
+def f(ibex):
+  et = ibex.Variable("exposure_time")
+  err = np.where(et < left, left, et)
+  err = np.where(err > right, right, err)
+  err = maxo * (1 - np.power((err - left) / (right - left), exp))
+  return err
+
+ibex = IBEX.Read(iname)
+ibex.Calculate("error", f)
+ibex.Write(oname)
+
+
