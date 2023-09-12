@@ -14,9 +14,9 @@ if len(sys.argv) != 3:
 ibex = IBEX()
 
 for csv in glob('%s/*csv' % sys.argv[1]):
-  print(csv)
   ibex.AddFromCSV(csv)
 
+pdb.set_trace()
 ibex.Write(sys.argv[2])
 
 

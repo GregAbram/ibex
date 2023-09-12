@@ -11,8 +11,8 @@ import colortools as ct
 class Application(Frame):
 
     def update2D(self):
-        f = (1023*self.current_flux).astype('u2')
-        e = (1023*self.current_error).astype('u2')
+        f = (1023*self.current_var).astype('u2')
+        e = (1023*self.current_err).astype('u2')
         rgb = (255*self.TwoDCmap[f,e]).astype('u1')
         img = Image.fromarray(rgb).resize((720,360))
         tkimg = ImageTk.PhotoImage(img)
@@ -47,23 +47,23 @@ class Application(Frame):
     def Update(self, indx):
         self.current_index = indx
         self.currentDataset.set(ibx.names[indx])
-        n,self.current_flux,self.current_error = self.ibx.GetByIndex(indx)
-        self.current_flux = (self.current_flux - np.min(self.current_flux)) / (np.max(self.current_flux) - np.min(self.current_flux))
-        self.current_error = (self.current_error - np.min(self.current_error)) / (np.max(self.current_error) - np.min(self.current_error))
-        self.update1D(self.current_flux, self.fluxImage, self.fluxCmap)
-        self.update1D(self.current_error, self.errorImage, self.errorCmap)
+        n,varnames,vardata = self.ibx.GetByIndex(indx)
+        var = vardata[varnames.index(self.varname)]
+        err = vardata[varnames.index(self.errname)]
+        self.current_var = (var - np.min(var)) / (np.max(var) - np.min(var))
+        # self.current_err = (err - np.min(err)) / (np.max(err) - np.min(err))
+        self.current_err = err
+        self.update1D(self.current_var, self.varImage, self.varCmap)
+        self.update1D(self.current_err, self.errImage, self.errCmap)
         self.update2D()
 
-    def updateFlux(self):
-        print('updateFlux')
-
-    def ChooseFluxCmap(self):
+    def ChooseVarCmap(self):
         filename = filedialog.askopenfilename(initialdir=os.getcwd(),
                         title = "Select a colormap",
                         filetypes = (("1D map files", "*.csv *.json *.xml"), ("all files", "*.*")))
-        self.fluxCmapWidget.configure(text=filename)
-        self.fluxCmap = ct.load_colormap(filename)
-        self.update1D(self.current_flux, self.fluxImage, self.fluxCmap)
+        self.varCmapWidget.configure(text=filename)
+        self.varCmap = ct.load_colormap(filename)
+        self.update1D(self.current_var, self.varImage, self.varCmap)
 
     def Choose2DCmap(self):
         filename = filedialog.askopenfilename(initialdir = os.getcwd(),
@@ -83,8 +83,8 @@ class Application(Frame):
         self.cmap2D_image.image = tkimg
 
     def Save(self):
-        f = (1023*self.current_flux).astype('u2')
-        e = (1023*self.current_error).astype('u2')
+        f = (1023*self.current_var).astype('u2')
+        e = (1023*self.current_err).astype('u2')
         rgb = (255*self.TwoDCmap[f,e]).astype('u1')
         img = Image.fromarray(rgb)
         img.save('%s-%s.png' % (self.currentDataset.get(), self.TwoDCmapName))
@@ -106,44 +106,44 @@ class Application(Frame):
         filename = filedialog.askopenfilename(initialdir = os.getcwd(),
                         title = "Select a colormap",
                         filetypes = (("1D map files", "*.csv *.json *.xml"), ("all files", "*.*")))
-        self.errorCmapWidget.configure(text=filename)
-        self.errorCmap = ct.load_colormap(filename)
-        self.update1D(self.current_error, self.errorImage, self.errorCmap)
+        self.errCmapWidget.configure(text=filename)
+        self.errCmap = ct.load_colormap(filename)
+        self.update1D(self.current_err, self.errImage, self.errCmap)
 
     def Setup(self):
         self.grid()
         self.master.title("IBEX Viewer")
 
-        title0 = Label(self.master, text="Normalized Flux").grid(row=0, column=0, columnspan=2)
+        title0 = Label(self.master, text="Normalized %s" % self.varname).grid(row=0, column=0, columnspan=2)
 
-        self.fluxImage = Label(self.master)
-        self.fluxImage.grid(row=1, column=0, columnspan=2)
+        self.varImage = Label(self.master)
+        self.varImage.grid(row=1, column=0, columnspan=2)
 
         f = Frame(self.master)
         f.grid(row=2, column=0, columnspan=2, sticky='ewns')
 
         a = Label(f, text='1D Colormap: ').pack(side=LEFT)
 
-        self.fluxCmapWidget = Label(f, text='GreyScale')
-        self.fluxCmapWidget.pack(side=LEFT)
+        self.varCmapWidget = Label(f, text='GreyScale')
+        self.varCmapWidget.pack(side=LEFT)
 
-        b = Button(f, text="...", command=self.ChooseFluxCmap)
+        b = Button(f, text="...", command=self.ChooseVarCmap)
         b.pack(side=LEFT)
 
         hgap = Separator(self.master, orient='horizontal').grid(row=3, column=0, columnspan=2, sticky='ew')
 
-        title1 = Label(self.master, text="Normalized Relative Error").grid(row=4, column=0, columnspan=2)
+        title1 = Label(self.master, text="Normalized %s" % self.errname).grid(row=4, column=0, columnspan=2)
 
-        self.errorImage = Label(self.master)
-        self.errorImage.grid(row=5, column=0, columnspan=2)
+        self.errImage = Label(self.master)
+        self.errImage.grid(row=5, column=0, columnspan=2)
 
         f = Frame(self.master)
         f.grid(row=6, column=0, columnspan=2, sticky='ewns')
 
         a = Label(f, text='1D Colormap: ').pack(side=LEFT)
 
-        self.errorCmapWidget = Label(f, text='GreyScale')
-        self.errorCmapWidget.pack(side=LEFT)
+        self.errCmapWidget = Label(f, text='GreyScale')
+        self.errCmapWidget.pack(side=LEFT)
 
         b = Button(f, text="...", command=self.ChooseErrorCmap)
         b.pack(side=LEFT)
@@ -200,27 +200,29 @@ class Application(Frame):
         filemenu.add_command(label='Quit', command=self.Quit)
         self.master.config(menu=menubar)
 
-    def __init__(self, ibx):
+    def __init__(self, ibx, varname, errname):
         self.master = Tk()
         self.ibx = ibx
         Frame.__init__(self, self.master)
+        self.varname = varname
+        self.errname = errname
         self.Setup()
         r = np.arange(256)/255.0
-        self.fluxCmap = np.column_stack([r]*3)
-        self.errorCmap = np.column_stack([r]*3)
+        self.varCmap = np.column_stack([r]*3)
+        self.errCmap = np.column_stack([r]*3)
         r = np.arange(1024)/1023.0
         self.TwoDCmap = np.column_stack([r]*(3*1024))
         self.TwoDCmapName = 'grayscale'
         self.update2DCmap()
         self.Update(0)
         
-if len(sys.argv) != 2:
-  print('syntax: %s data.ibx' % sys.argv[0])
+if len(sys.argv) != 4:
+  print('syntax: %s data.ibx varname errname' % sys.argv[0])
   sys.exit(0)
 
 ibx = IBEX.Read(sys.argv[1])
 res = ibx.resolution
-ibx.Normalize()
+# ibx.Normalize()
 
-app = Application(ibx)
+app = Application(ibx, sys.argv[2], sys.argv[3])
 app.mainloop()
