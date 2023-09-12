@@ -1,0 +1,78 @@
+import sys
+import numpy as np
+import vtk
+from vtk.numpy_interface import dataset_adapter as dsa
+from ibex.ibex import IBEX
+
+def toVTU(f, e):
+    
+    vtu = dsa.WrapDataObject(vtk.vtkUnstructuredGrid())
+    
+    nx = f.shape[1]
+    ny = f.shape[0]
+
+    npoints = nx*ny
+    nquads = nx*(ny-1)
+
+    i = np.arange(npoints)
+    lon = 2*np.mod(i, nx) * (2*np.pi / 360) 
+    a = np.trunc(i / nx)
+    lat = (2*(i / nx) - 90) * (2*np.pi / 360)
+    #print('lat', np.min(lat), np.max(lat))
+    #print('lat', np.cos(np.min(lat)), np.sin(np.max(lat)))
+    #print(np.min(lon), np.max(lon))
+
+    y = 2*np.trunc(i / nx)
+    #print('y', np.min(y), np.max(y))
+
+    x = np.cos(lon)*np.cos(lat)
+    #print('x', x[0], x[-1], 'lo', lon[0], lon[-1], 'la', lat[0], lat[-1])
+    y = np.sin(lon)*np.cos(lat)
+    z = np.sin(lat)
+    vtu.Points = np.column_stack((x, y, z))
+
+    i = np.arange(nquads).astype('i4')    
+    x = np.mod(i, nx)
+    y = np.trunc(i / nx).astype('i4')
+    p = y * nx + x
+    q = y * nx + ((x + 1) % nx)
+    r = (y + 1) * nx + ((x + 1) % nx)
+    s = (y + 1) * nx + x
+
+    hexes = np.column_stack(([4]*nquads, p, q, r, s))
+    
+    #print(hexes[179])
+    #print(x, p[179], q[179], r[179], s[179])
+
+    types = np.array([vtk.VTK_QUAD]*nquads).astype('u1')
+    offsets = np.arange(nquads)*5
+
+    hexes = dsa.numpy_support.numpy_to_vtkIdTypeArray(hexes.flatten())
+    types = dsa.numpy_support.numpy_to_vtk(types)
+    offsets = dsa.numpy_support.numpy_to_vtkIdTypeArray(offsets)
+
+    vcells = vtk.vtkCellArray()
+    vcells.SetCells(nquads, hexes)
+    vtu.VTKObject.SetCells(types, offsets, vcells)
+
+    vtu.PointData.append(f.flatten().astype('f4'), 'flux')
+    vtu.PointData.append(e.flatten().astype('f4'), 'error')
+    
+    return vtu.VTKObject
+
+
+if not os.path.isdir('spherical'):
+  os.mkdir('spherical')
+
+wrtr = vtk.vtkXMLUnstructuredGridWriter()
+
+ibx = IBEX.Read('data.ibx')
+
+for  i in range(ibx.Count()):
+    n,f,e = ibx.GetByIndex(i)
+    vtu = toVTU(f, e)
+    wrtr.SetFileName('spherical/%s.vtu' % n)
+    wrtr.SetInputData(vtu)
+    wrtr.Write()
+
+
