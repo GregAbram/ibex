@@ -7,6 +7,8 @@ from tkinter.ttk import Separator
 from PIL import Image, ImageTk
 from ibex import IBEX
 import colortools as ct
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class Application(Frame):
 
@@ -56,6 +58,7 @@ class Application(Frame):
         self.update1D(self.current_var, self.varImage, self.varCmap)
         self.update1D(self.current_err, self.errImage, self.errCmap)
         self.update2D()
+        self.updateHistos()
 
     def ChooseVarCmap(self):
         filename = filedialog.askopenfilename(initialdir=os.getcwd(),
@@ -132,13 +135,13 @@ class Application(Frame):
 
         hgap = Separator(self.master, orient='horizontal').grid(row=3, column=0, columnspan=2, sticky='ew')
 
-        title1 = Label(self.master, text="Normalized %s" % self.errname).grid(row=4, column=0, columnspan=2)
+        title1 = Label(self.master, text="%s" % self.errname).grid(row=4, column=0, columnspan=2)
 
         self.errImage = Label(self.master)
-        self.errImage.grid(row=5, column=0, columnspan=2)
+        self.errImage.grid(row=6, column=0, columnspan=2)
 
         f = Frame(self.master)
-        f.grid(row=6, column=0, columnspan=2, sticky='ewns')
+        f.grid(row=7, column=0, columnspan=2, sticky='ewns')
 
         a = Label(f, text='1D Colormap: ').pack(side=LEFT)
 
@@ -151,17 +154,22 @@ class Application(Frame):
         vgap = Separator(self.master, orient='vertical').grid(row=0, rowspan=6, column=3, sticky='ns')
 
         ResultFrame = Frame(self.master)
-        ResultFrame.grid(row=0, column=4, rowspan = 8, columnspan = 3, sticky = W+E+N+S)
+        ResultFrame.grid(row=0, column=4, rowspan = 8, columnspan = 3, sticky='ewns')
 
-        t1 = Label(ResultFrame, text="Result").pack(side=TOP)
+        upper = Frame(ResultFrame)
+        upper.grid(row=0, column=4, rowspan=4, columnspan=3, sticky='ewns')
 
-        self.resultImage = Label(ResultFrame)
-        self.resultImage.pack(side=TOP, fill=BOTH)
+        t1 = Label(upper, text="Result")
+        t1.pack(side=TOP)
 
-        f = Frame(ResultFrame)
-        f.pack(side=TOP, fill=BOTH)
+        self.resultImage = Label(upper)
+        self.resultImage.pack(side=TOP)
 
-        a = Label(f, text='2D Colormap: ').pack(side=LEFT)
+        f = Frame(upper)
+        f.pack(side=TOP)
+
+        a = Label(f, text='2D Colormap: ')
+        a.pack(side=LEFT)
 
         self.TwoDCmapWidget = Label(f, text='GrayScale')
         self.TwoDCmapWidget.pack(side=LEFT)
@@ -169,15 +177,23 @@ class Application(Frame):
         b = Button(f, text="...", command=self.Choose2DCmap)
         b.pack(side=LEFT)
 
-        self.cmap2D_image = Label(ResultFrame, bg='gray', width=10, height=10)
-        self.cmap2D_image.pack(side=TOP)
-        #self.cmap2D_image = Label(ResultFrame, bg='gray', width=256, height=256)
-        #self.cmap2D_image.pack(side=TOP)
+        lowerRightFrame = Frame(ResultFrame, height=256)
+        lowerRightFrame.grid(row=5, column=4, rowspan=4, columnspan=4, sticky='nsew')
 
-        hgap = Separator(self.master, orient='horizontal').grid(row=7, column=0, columnspan=9, sticky='ew')
+        self.histoFrame = Frame(lowerRightFrame, width=464, height=256)
+        self.histoFrame.pack(side=LEFT)
+
+        cmapFrame = Frame(lowerRightFrame, bg='cyan', width=256, height=256)
+        cmapFrame.pack(side=RIGHT, padx=2)
+
+        self.cmap2D_image = Label(cmapFrame, bg='gray')
+        self.cmap2D_image.pack(side=TOP)
+
+        hgap = Separator(self.master, orient='horizontal')
+        hgap.grid(row=9, column=0, columnspan=10, sticky='ew')
 
         bottombox = Frame(self.master)
-        bottombox.grid(row=8, column=0, columnspan=6, sticky='ewns')
+        bottombox.grid(row=10, column=0, columnspan=6, sticky='ewns')
         Label(bottombox, text="Dataset Name").pack(side=LEFT)
 
         self.currentDataset = StringVar()
@@ -187,10 +203,10 @@ class Application(Frame):
         drop.pack(side=LEFT)
 
         nxt = Button(bottombox, text='Next', command=self.next)
-        nxt.pack(side=RIGHT)
+        nxt.pack(side=LEFT)
 
         prv = Button(bottombox, text='Prev', command=self.prev)
-        prv.pack(side=RIGHT)
+        prv.pack(side=LEFT)
 
         menubar = Menu(self.master)
         filemenu = Menu(menubar)
@@ -199,6 +215,27 @@ class Application(Frame):
         filemenu.add_command(label='Save All', command=self.SaveAll)
         filemenu.add_command(label='Quit', command=self.Quit)
         self.master.config(menu=menubar)
+
+        self.fig = Figure(figsize = (4.5, 2.5))
+        self.fig.subplots_adjust(left=0.1,
+                    bottom=0.1,
+                    right=0.9,
+                    top=0.9,
+                    wspace=0.4,
+                    hspace=0.4)
+        self.fig.tight_layout(pad=10.0)
+        self.var_histo_plot1 = self.fig.add_subplot(211)
+        self.err_histo_plot1 = self.fig.add_subplot(212)
+        self.histo_canvas = FigureCanvasTkAgg(self.fig, self.histoFrame)
+        self.histo_canvas._tkcanvas.pack(fill=BOTH)
+        self.histoFrame.pack(fill=BOTH)
+
+    def updateHistos(self):
+        self.var_histo_plot1.clear()
+        self.var_histo_plot1.hist(self.current_var.flatten(), bins=30)
+        self.err_histo_plot1.clear()
+        self.err_histo_plot1.hist(self.current_err.flatten(), bins=30)
+        self.histo_canvas.draw()
 
     def __init__(self, ibx, varname, errname):
         self.master = Tk()
@@ -221,8 +258,6 @@ if len(sys.argv) != 4:
   sys.exit(0)
 
 ibx = IBEX.Read(sys.argv[1])
-res = ibx.resolution
-# ibx.Normalize()
 
 app = Application(ibx, sys.argv[2], sys.argv[3])
 app.mainloop()
