@@ -1,0 +1,24 @@
+#! /usr/bin/env python3
+
+import sys, pdb, numpy as np
+from ibex import IBEX
+from PIL import Image
+
+if len(sys.argv) == 1 or sys.argv[1] == '-h':
+  print("Usage: %s in.ibx varname" % sys.argv[0])
+  sys.exit(1)
+
+ibex = IBEX.Read(sys.argv[1])
+
+vari = ibex.varnames.index(sys.argv[2])
+min = np.min(ibex.vardata[vari])
+max = np.max(ibex.vardata[vari])
+
+
+for n in ibex.names:
+  dset = ibex.GetByName(n)[2][vari]
+  dset = np.floor(254.999 * (dset - min) / (max - min)).astype('u1')
+  print(np.min(dset), np.max(dset))
+  img = Image.fromarray(dset )
+  img.save('%s_%s_gscale.png' % (n, sys.argv[2]))
+

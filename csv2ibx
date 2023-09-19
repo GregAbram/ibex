@@ -33,7 +33,7 @@ if not directory or not outfile:
 
 ibex = IBEX()
 
-for csv in glob('%s/%s' % (directory, pattern)):
+for csv in sorted(glob('%s/%s' % (directory, pattern))):
   ibex.AddFromCSV(csv)
 
 ibex.Write(outfile)

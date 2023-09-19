@@ -52,9 +52,10 @@ class Application(Frame):
         n,varnames,vardata = self.ibx.GetByIndex(indx)
         var = vardata[varnames.index(self.varname)]
         err = vardata[varnames.index(self.errname)]
-        self.current_var = (var - np.min(var)) / (np.max(var) - np.min(var))
-        # self.current_err = (err - np.min(err)) / (np.max(err) - np.min(err))
+        # self.current_var = (var - np.min(var)) / (np.max(var) - np.min(var))
+        self.current_var = var
         self.current_err = err
+        self.current_err = (err - np.min(err)) / (np.max(err) - np.min(err))
         self.update1D(self.current_var, self.varImage, self.varCmap)
         self.update1D(self.current_err, self.errImage, self.errCmap)
         self.update2D()
@@ -93,14 +94,14 @@ class Application(Frame):
         img.save('%s-%s.png' % (self.currentDataset.get(), self.TwoDCmapName))
         
     def SaveAll(self):
+        directory = filedialog.askdirectory(initialdir = os.getcwd(), title = "Select output directory")
         for i in range(len(self.ibx.names)):
-          n,f,e = self.ibx.GetByIndex(i)
-          f = (1023*f).astype('u2')
-          e = (1023*e).astype('u2')
+          dataset_name,varnames,vardata = self.ibx.GetByIndex(i)
+          f = (1023*vardata[varnames.index(self.varname)]).astype('u2')
+          e = (1023*vardata[varnames.index(self.errname)]).astype('u2')
           rgb = (255*self.TwoDCmap[f,e]).astype('u1')
-          img = Image.fromarray(rgb)
-          img.save('%s-%s.png' % (n, self.TwoDCmapName))
-        print('Save All')
+          img = Image.fromarray(rgb).resize((720,360))
+          img.save('%s/%s.png' % (directory, dataset_name))
         
     def Quit(self):
         print('Quit')
@@ -257,6 +258,7 @@ if len(sys.argv) != 4:
   sys.exit(0)
 
 ibx = IBEX.Read(sys.argv[1])
+print(np.min(ibx.vardata[ibx.varnames.index('exposure_time')]), np.max(ibx.vardata[ibx.varnames.index('exposure_time')]))
 
 app = Application(ibx, sys.argv[2], sys.argv[3])
 app.mainloop()

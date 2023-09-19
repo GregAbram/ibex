@@ -1,0 +1,24 @@
+#! /usr/bin/env python3
+
+import sys, pdb, numpy as np
+from ibex import IBEX
+
+if len(sys.argv) == 1 or sys.argv[1] == '-h':
+  print("Usage: %s in.ibx varname out.ibx" % sys.argv[0])
+  sys.exit(1)
+
+idata = sys.argv[1]
+vname = sys.argv[2]
+oname = sys.argv[3]
+
+def normalize(ibx):
+  v = ibx.Variable(vname)
+  max = np.max(v)
+  min = np.min(v)
+  return (v - min) / (max - min)
+
+ibex = IBEX.Read(sys.argv[1])
+ibex.Calculate(vname+'_n', normalize)
+ibex.Write(oname)
+
+

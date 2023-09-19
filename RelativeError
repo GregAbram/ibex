@@ -1,0 +1,25 @@
+#! /usr/bin/env python3
+
+import sys, pdb, numpy as np
+from ibex import IBEX
+
+if len(sys.argv) == 1 or sys.argv[1] == '-h':
+  print("Usage: %s in.ibx datavar abs_error_var out.ibx" % sys.argv[0])
+  sys.exit(1)
+
+idata = sys.argv[1]
+data_name = sys.argv[2]
+abs_error_name = sys.argv[3]
+oname = sys.argv[4]
+
+def relative_error(ibx):
+  return ibx.Variable(data_name) / ibx.Variable(abs_error_name)
+
+def normalize(ibx):
+  v = ibx.Variable(data_name + '_re')
+  return (v - np.min(v)) / (np.max(v) - np.min(v))
+
+ibex = IBEX.Read(sys.argv[1])
+ibex.Calculate(data_name+'_re', relative_error)
+ibex.Calculate(data_name+'_re_n', normalize)
+ibex.Write(oname)

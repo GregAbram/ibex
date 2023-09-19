@@ -20,6 +20,7 @@ def syntax(a):
   print("syntax: %s [ -nodisplay ] fmap [ -e emap ] [ -E value ] [ -o omap ]" % a)
   print("where:")
   print("  -nodisplay       prevents it from popping up a window to show 2D cmap")
+  print("  -r               reverse the fmap")
   print("  -e emap          colormap to apply at full error - defaults to solid gray")
   print("  -E emap          value for solid gray in abscence of emap - default to 0.4")
   print("  -o omap          opacity transfer function - defaults to linear")
@@ -40,11 +41,15 @@ fmap = None
 emap = None
 omap = None
 val  = 0.4
+reverse = False
 
 args = sys.argv[1:]
 while len(args) > 0:
   if args[0] == '-nodisplay':
     display = False
+    args = args[1:]
+  elif args[0] == '-r':
+    reverse = True
     args = args[1:]
   elif args[0] == '-e':
     emap = args[1]
@@ -68,6 +73,9 @@ if fmap == None:
 f = fmap.split('/')[-1].rsplit('.',1)[0]
 fmap = ct.load_colormap(fmap)
 
+if reverse:
+  fmap = np.flipud(fmap)
+
 if emap:
   e = fmap.split('/')[-1].rsplit('.',1)[0]
   emap = ct.load_colormap(emap)
@@ -89,6 +97,9 @@ if display:
   plt.imshow(np.flipud(cmap2D*255).astype('u1'))
   plt.show()
 
-oname = '%s-%s-%s.cmap2D' % (f, e, o)
+if reverse:
+  oname = '%s-%s-%s-R.cmap2D' % (f, e, o)
+else:
+  oname = '%s-%s-%s.cmap2D' % (f, e, o)
 
 cmap2D.tofile(oname)

@@ -1,0 +1,23 @@
+#! /usr/bin/env python3
+
+import sys, pdb
+import colortools as ct, numpy as np
+
+def syntax(a):
+  print('Syntax: %s [-float] cmap.[json|xml] ... cmap.[json|xml]' % a)
+  sys.exit()
+
+if len(sys.argv) == 1:
+  syntax(sys.argv[0])
+
+pdb.set_trace()
+if sys.argv[1] == '-float':
+  for name in sys.argv[2:]:
+    cmap = ct.load_colormap(name)
+    oname = name.rsplit('.', 1)[0] + '.csv'
+    np.savetxt(oname, cmap.astype('float32'), delimiter=',', fmt='%f')
+else:
+  for name in sys.argv[1:]:
+    cmap = ct.load_colormap('../Colormaps/cm41.xml')
+    oname = name.rsplit('.', 1)[0] + '.csv'
+    np.savetxt(oname, (255*cmap).astype('int32'), delimiter=',', fmt='%d')

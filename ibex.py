@@ -96,7 +96,7 @@ class IBEX:
 
   def GetByName(self, name):
     i = self.names.index(name)
-    return GetByIndex(i)
+    return self.GetByIndex(i)
 
   def Ranges(self):
     ranges = []

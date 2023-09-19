@@ -1,0 +1,26 @@
+#! /usr/bin/env python3
+
+import sys, pdb, numpy as np
+from ibex import IBEX
+
+if len(sys.argv) == 1 or sys.argv[1] == '-h':
+  print("Usage: %s in.ibx varname out.ibx" % sys.argv[0])
+  sys.exit(1)
+
+idata = sys.argv[1]
+lower = int(sys.argv[2])
+upper = int(sys.argv[3])
+mino = float(sys.argv[4])
+oname = sys.argv[5]
+
+def bracket(ibx):
+  v = ibx.Variable('exposure_time')
+  min = np.min(v)
+  max = np.max(v)
+  return 1 - np.where(v < lower, mino, np.where(v > upper, 1, mino + (1 - mino)*(v - min) / (max - min)))
+  
+ibex = IBEX.Read(sys.argv[1])
+ibex.Calculate('bracket_%d_%d_%3.2f' % (lower, upper, mino), bracket)
+ibex.Write(oname)
+
+

@@ -1,0 +1,68 @@
+#! /usr/bin/env python3
+
+import sys, pdb, os
+from ibex import IBEX
+import colortools as ct
+from PIL import Image
+
+def syntax(a):
+  print("syntax: %s ibex cmap fvar evar dirname" % a)
+  sys.exit(1)
+
+if (not (len(sys.argv) == 5 or len(sys.argv) == 6)) or sys.argv[1] == '-h':
+  syntax(sys.argv[0])
+  sys.exit()
+
+ibx_name  = sys.argv[1]
+cmap_name = sys.argv[2]
+fvar = sys.argv[3]
+evar = sys.argv[4]
+
+if len(sys.argv) == 6:
+  dirname = sys.argv[5]
+else:
+  a = ibx_name.rsplit('.', 1)[0].rsplit('/')[-1]
+  b = cmap_name.rsplit('.', 1)[0].rsplit('/')[-1]
+  dirname = '%s_%s_%s_%s' % (a, fvar, evar, b)
+
+if not os.path.isdir(dirname):
+  os.mkdir(dirname)
+
+try:
+  ibx = IBEX.Read(ibx_name)
+except:
+  print("unable to load ibex data:",  ibx_name)
+  syntax(sys.argv[0])
+
+try:
+  cmap =  ct.ReadColormap2D(cmap_name)
+except:
+  print("unable to load 2D colormap:",  cmap_name)
+  syntax(sys.argv[0])
+
+if fvar not in ibx.varnames:
+  print("data variable: ", fvar, " not found in ibex data")
+  syntax(sys.argv[0])
+
+if evar not in ibx.varnames:
+  print("error variable: ", evar, " not found in ibex data")
+  syntax(sys.argv[0])
+
+if len(sys.argv) == 6:
+  dirname = sys.argv[5]
+else:
+  a = ibx_name.rsplit('.', 1)[0].rsplit('/')[-1]
+  b = cmap_name.rsplit('.', 1)[0].rsplit('/')[-1]
+  dirname = '%s_%s_%s_%s' % (a, fvar, evar, b)
+
+if not os.path.isdir(dirname):
+  os.mkdir(dirname)
+
+for i,n in enumerate(ibx.names):
+  dataset_name,varnames,vardata = ibx.GetByIndex(i)
+  f = (1023*vardata[ibx.varnames.index(fvar)]).astype('u2')
+  e = (1023*vardata[ibx.varnames.index(evar)]).astype('u2')
+  rgb = (255*cmap[f,e]).astype('u1')
+  img = Image.fromarray(rgb).resize((720,360))
+  img.save('%s/%s.png' % (dirname, dataset_name))
+

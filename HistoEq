@@ -1,0 +1,32 @@
+#! /usr/bin/env python3
+
+import sys, pdb, numpy as np
+from ibex import IBEX
+
+if len(sys.argv) == 1 or sys.argv[1] == '-h':
+  print("Usage: %s in.ibx varname out.ibx" % sys.argv[0])
+  sys.exit(1)
+
+idata = sys.argv[1]
+vname = sys.argv[2]
+oname = sys.argv[3]
+
+ibex = IBEX.Read(sys.argv[1])
+
+def heq(ibx):
+  data = ibx.Variable(vname)
+  shape = data.shape
+  data = data.flatten()
+  ndata = (data - np.min(data)) / (np.max(data) - np.min(data))
+  idata = np.floor(ndata * 1024).astype('i4')
+  harray = np.bincount(idata, minlength=256)
+  num_pixels = np.sum(harray)
+  harray = harray/num_pixels
+  charray = np.cumsum(harray)
+  tmap = np.floor(1023 * charray).astype('f4')
+  return tmap[idata].reshape(shape)
+
+ibex.Calculate(vname+'_he', heq)
+ibex.Write(oname)
+
+
