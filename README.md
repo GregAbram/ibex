@@ -81,7 +81,7 @@ Several tools are included to create derived variables using the IBEX class' Cal
 
 This application is used for testing colormaps against the data in an ibx file.  Run it **IBEX_Viewer file.ibx**.
 
-![Alt text](,/IBEX.png?raw=true "IBEX")
+![Alt text](./IBEX.png?raw=true "IBEX")
 
 The tool shows four main panels.   
 
