@@ -1,5 +1,7 @@
 # IBEX Tools
 
+![Alt text](./IBEX.png?raw=true "IBEX")
+
 This repo contains tools for manipulating IBEX data.   In general, these tools were developed to explore the representation of unreliability in the data using a 2D colormap.  These tools are based on a Python class IBEX.   Ancillary tools are contained in the colortools.py file.
 
 ## Usage
@@ -103,8 +105,6 @@ Several tools are included to create derived variables using the IBEX class' Cal
 ** IBEX_Viewer
 
 This application is used for testing colormaps against the data in an ibx file.  Run it **IBEX_Viewer file.ibx**.
-
-![Alt text](./IBEX.png?raw=true "IBEX")
 
 The tool shows four main panels.   
 
