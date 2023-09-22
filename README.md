@@ -2,6 +2,27 @@
 
 This repo contains tools for manipulating IBEX data.   In general, these tools were developed to explore the representation of unreliability in the data using a 2D colormap.  These tools are based on a Python class IBEX.   Ancillary tools are contained in the colortools.py file.
 
+## Usage
+
+Basic usage is:
+
+1. Create ibex dataset from initial input CSV data
+2. Create 2D Colormap (see MkMap below)
+3. Run Viewer (see IBEX_Viewer below)
+
+To create a separate ibex dataset from the input .csv files (in a 'data' subdirectory, I used the following script:
+
+'''
+for i in `seq 2 6` ; do
+  Csv2Ibx data/*_${i}.csv a.ibx
+  HistoEq a.ibx flux b.ibx
+  RelativeError b.ibx flux flux_se c.ibx
+  BracketExposure c.ibx 3 13 0.2 d.ibx
+  BracketExposure d.ibx 3 100 0.6 esa_${i}.ibx
+  rm [abcd].ibx
+done
+'''
+
 ## IBEX Class
 
 The IBEX class represents an IBEX dataset.  This includes a set of *timesteps*.  Each timestep contains a set of *dependent variables*, defined as a 2D grid of scalar, floating point values, with one column for each unique longitude of the data and one row for each unique latitude.  If a particular location is not found in the original data a value of 0 will be used.
@@ -61,6 +82,7 @@ Internally, these are [1024,1024,3] arrays that map a signal (the Y axis) and as
 
 Command line tools are included in the repo.   TO use these conveniently, add the repo root directory to your PATH environment variable.
 
+- **MkMap sigmap [-r] [-nodisplay] [-e unreliability_map] [-e unreliability_value] [-o omap]** Create a 2D colormap.  The map will interpolate from the sigmap on the left to the unreliability map on the right, which may be a constant greyscale value given by the -e parameter, defaulting to 0.4.  By default the 2D colormap will be displayed unless the [-nodisplay] flag is given.  The interpolation will be linear unless the [-o omap] argument is given; if it is, it will control the interpolation.   If the [-r] option is given, the sigmap will be reversed.  The output file will be named according to the sigmap, the unreliability mapping, and the interpolation model.
 - **Csv2Ibx csv [csv...] ibx** read a set of csv files in original format into an IBEX instance and save it as an ibx file
 - **ApplyCmap2D ibx cmap sigvar relvar directory** Apply the given 2D colormap to the specified variables in the input data file, produucing one image file for each timestep
 - **Ibex2Gscale ibx varname** render a grey-scale image of the named variable of each timestep of the data.
