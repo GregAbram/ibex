@@ -12,7 +12,7 @@ Basic usage is:
 
 To create a separate ibex dataset from the input .csv files (in a 'data' subdirectory, I used the following script:
 
-'''
+```
 for i in `seq 2 6` ; do
   Csv2Ibx data/*_${i}.csv a.ibx
   HistoEq a.ibx flux b.ibx
@@ -21,7 +21,8 @@ for i in `seq 2 6` ; do
   BracketExposure d.ibx 3 100 0.6 esa_${i}.ibx
   rm [abcd].ibx
 done
-'''
+```
+This creates a separate .ibx file for each ESA level, with additional variables containing the histogram-equalized version of ***flux*** variable (***flux_he***), and two bracketted unreliability variables.
 
 ## IBEX Class
 
