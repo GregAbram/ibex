@@ -2,39 +2,25 @@
 
 import sys, pdb
 from ibex import IBEX
-from glob import glob
 
 def syntax(a):
-  print('syntax:', a, 'options {directory} {outfile}')
-  print('options:')
-  print('  -p pattern    glob pattern in source directory (*.csv)')
+  print('syntax: ', a, ' csv [csv...] {outfile}')
   sys.exit(1)
 
 directory = None
-outfile = None
-pattern = '*.csv'
 
-args = sys.argv[1:]
-while len(args) > 0:
-  if args[0] == '-p':
-    pattern = args[1]
-    args = args[2:]
-  elif not directory:
-    directory = args[0]
-    args = args[1:]
-  elif not outfile:
-    outfile = args[0]
-    args = args[1:]
-  else:
-    syntax(sys.argv[0])
+csvs = sys.argv[1:-1]
+outfile = sys.argv[-1]
 
-if not directory or not outfile:
+if len(csvs) == 0 or not outfile:
   syntax(sys.argv[0])
 
 ibex = IBEX()
 
-for csv in sorted(glob('%s/%s' % (directory, pattern))):
+for csv in csvs:
   ibex.AddFromCSV(csv)
+
+ibex.Sort()
 
 ibex.Write(outfile)
 

@@ -106,12 +106,6 @@ class IBEX:
       ranges.append([m,M])
     return ranges
 
-  def Normalize(self):
-    ranges = self.Ranges()
-    for i,range in enumerate(ranges):
-      if (range[0] != range[1]):
-        self.vardata[i] = (self.vardata[i] - range[0]) / (range[1] - range[0])
-
   def Resize(self, m):
     for i in range(len(self.varnames)):
       a = []
@@ -127,5 +121,27 @@ class IBEX:
 
   def Calculate(self, result_name, func):
     self.varnames.append(result_name)
-    self.vardata.append(func(self))
+    b = func(self)
+    self.vardata.append(b)
+
+  def Sort(self):
+    permutation = [j[1] for j in sorted([[n, i] for i,n in enumerate(self.names)], key=lambda a: a[0])]
+    self.names = [self.names[i] for i in permutation]
+    for i in range(len(self.varnames)):
+      self.vardata[i] = self.vardata[i][permutation]
+
+  def Normalize(self):
+    for i in range(len(self.varnames)):
+      a = self.vardata[i]
+      self.vardata[i] = (a - np.min(a)) / (np.max(a) - np.min(a))
+
+  def Info(self):
+    print("datasets:")
+    for n in self.names:
+      print('  ', n)
+    print("variables:")
+    for i, n in enumerate(self.varnames):
+      print(n, np.min(self.vardata[i]), np.max(self.vardata[i]))
+  
+  
 

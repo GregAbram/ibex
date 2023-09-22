@@ -58,6 +58,8 @@ else:
 if not os.path.isdir(dirname):
   os.mkdir(dirname)
 
+ibx.Normalize()
+
 for i,n in enumerate(ibx.names):
   dataset_name,varnames,vardata = ibx.GetByIndex(i)
   f = (1023*vardata[ibx.varnames.index(fvar)]).astype('u2')

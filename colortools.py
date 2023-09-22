@@ -183,8 +183,11 @@ def interpolate_map(map, length):
 def ApplyColormap2D(c,v,f):
     a = np.around(c*1023).astype('u2')
     b = np.around(v*1023).astype('u2')
-    print(a.shape, b.shape, f.shape)
     return f[a,b]
+
+def ApplyColormap1D(c,f):
+    a = np.around(c*255).astype('u2')
+    return f[a]
 
 def WriteColormap2D(cmap2D, filename):
     cmap2D.tofile(filename)

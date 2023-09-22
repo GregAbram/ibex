@@ -13,30 +13,31 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class Application(Frame):
 
     def update2D(self):
-        f = (1023*self.current_var).astype('u2')
-        e = (1023*self.current_err).astype('u2')
-        rgb = (255*self.TwoDCmap[f,e]).astype('u1')
-        img = Image.fromarray(rgb).resize((720,360))
-        tkimg = ImageTk.PhotoImage(img)
-        self.resultImage.configure(image=tkimg, height=360, width=720)
-        self.resultImage.image = tkimg
+        if self.varname and self.errname:
+          f = (1023*self.normalized_var).astype('u2')
+          e = (1023*self.err).astype('u2')
+          rgb = (255*self.TwoDCmap[f,e]).astype('u1')
+          img = Image.fromarray(rgb).resize((720,360))
+          tkimg = ImageTk.PhotoImage(img)
+          self.resultImage.configure(image=tkimg, height=360, width=720)
+          self.resultImage.image = tkimg
 
     def selectDataset(self, a):
         ds = self.currentDataset.get()
         indx = self.ibx.names.index(ds)
-        self.Update(indx)
+        self.updateTimestep(indx)
 
     def next(self):
         if self.current_index == (len(self.ibx.names)-1):
-          self.Update(0)
+          self.updateTimestep(0)
         else:
-          self.Update(self.current_index + 1)
+          self.updateTimestep(self.current_index + 1)
 
     def prev(self):
         if self.current_index == 0:
-          self.Update(len(self.ibx.names)-1)
+          self.updateTimestep(len(self.ibx.names)-1)
         else:
-          self.Update(self.current_index - 1)
+          self.updateTimestep(self.current_index - 1)
 
     def update1D(self, v, label, cmap):
         iv = (255*v).astype('u2')
@@ -46,38 +47,89 @@ class Application(Frame):
         label.configure(image=tkimg, height=270, width=540)
         label.image = tkimg
 
-    def Update(self, indx):
+    def newDataVar(self, d, update_ui):
+        self.varname = d
+        n,varnames,vardata = self.ibx.GetByIndex(self.current_index)
+        self.var = vardata[varnames.index(self.varname)]
+        if np.min(self.var) != 0 or np.max(self.var) != 1:
+          self.normalized_var = (self.var - np.min(self.var)) / (np.max(self.var) - np.min(self.var))
+        else:
+          self.normalized_var = self.var
+        if update_ui:
+          self.updateVar()
+          self.update2D()
+        
+    def newErrorVar(self, e, update_ui):
+        self.errname = e
+        n,varnames,vardata = self.ibx.GetByIndex(self.current_index)
+        self.err = vardata[varnames.index(self.errname)]
+        if update_ui:
+          self.updateErr()
+          self.update2D()
+        
+    def updateTimestep(self, indx):
+        n,varnames,vardata = self.ibx.GetByIndex(self.current_index)
+        if self.varname:
+          self.var = vardata[varnames.index(self.varname)]
+          if np.min(self.var) != 0 or np.max(self.var) != 1:
+            self.normalized_var = (self.var - np.min(self.var)) / (np.max(self.var) - np.min(self.var))
+          else:
+            self.normalized_var = self.var
+        if self.errname:
+          self.err = vardata[varnames.index(self.errname)]
         self.current_index = indx
-        self.currentDataset.set(ibx.names[indx])
-        n,varnames,vardata = self.ibx.GetByIndex(indx)
-        var = vardata[varnames.index(self.varname)]
-        err = vardata[varnames.index(self.errname)]
-        # self.current_var = (var - np.min(var)) / (np.max(var) - np.min(var))
-        self.current_var = var
-        self.current_err = err
-        self.current_err = (err - np.min(err)) / (np.max(err) - np.min(err))
-        self.update1D(self.current_var, self.varImage, self.varCmap)
-        self.update1D(self.current_err, self.errImage, self.errCmap)
+        self.updateGUI()
+
+    def updateVar(self):
+        if self.varname:
+          self.update1D(self.normalized_var, self.varImage, self.varCmap)
+          self.var_histo_plot1.clear()
+          self.var_histo_plot1.hist(self.var.flatten(), bins=30)
+          self.histo_canvas.draw()
+
+    def updateErr(self):
+        if self.errname:
+          self.update1D(self.err, self.errImage, self.errCmap)
+          self.err_histo_plot1.clear()
+          self.err_histo_plot1.hist(self.err.flatten(), bins=30)
+          self.histo_canvas.draw()
+
+    def updateGUI(self):
+        self.updateVar()
+        self.updateErr()
         self.update2D()
+        self.update2DCmap()
         self.updateHistos()
+        self.currentDataset.set(ibx.names[self.current_index])
 
     def ChooseVarCmap(self):
         filename = filedialog.askopenfilename(initialdir=os.getcwd(),
                         title = "Select a colormap",
                         filetypes = (("1D map files", "*.csv *.json *.xml"), ("all files", "*.*")))
-        self.varCmapWidget.configure(text=filename)
-        self.varCmap = ct.load_colormap(filename)
-        self.update1D(self.current_var, self.varImage, self.varCmap)
+        if filename != '':
+          self.varCmapWidget.configure(text=filename)
+          self.varCmap = ct.load_colormap(filename)
+          self.updateVar()
+
+    def ChooseErrorCmap(self):
+        filename = filedialog.askopenfilename(initialdir = os.getcwd(),
+                        title = "Select a colormap",
+                        filetypes = (("1D map files", "*.csv *.json *.xml"), ("all files", "*.*")))
+        if filename != '':
+          self.errCmapWidget.configure(text=filename)
+          self.errCmap = ct.load_colormap(filename)
+          self.updateErr()
 
     def Choose2DCmap(self):
         filename = filedialog.askopenfilename(initialdir = os.getcwd(),
                         title = "Select a colormap",
                         filetypes = (("2D map files", "*.cmap2D"), ("all files", "*.*")))
-        self.TwoDCmap = ct.ReadColormap2D(filename)
-        self.TwoDCmapName = filename.split('/')[-1].split('.')[0]
-        self.TwoDCmapWidget.configure(text=filename)
-        self.update2DCmap()
-        self.update2D()
+        if filename != '':
+          self.TwoDCmap = ct.ReadColormap2D(filename)
+          self.TwoDCmapName = filename.split('/')[-1].split('.')[0]
+          self.TwoDCmapWidget.configure(text=filename)
+          self.update2DCmap()
+          self.update2D()
 
     def update2DCmap(self):
         rgb = (255*self.TwoDCmap).astype('u1')
@@ -106,19 +158,20 @@ class Application(Frame):
     def Quit(self):
         print('Quit')
 
-    def ChooseErrorCmap(self):
-        filename = filedialog.askopenfilename(initialdir = os.getcwd(),
-                        title = "Select a colormap",
-                        filetypes = (("1D map files", "*.csv *.json *.xml"), ("all files", "*.*")))
-        self.errCmapWidget.configure(text=filename)
-        self.errCmap = ct.load_colormap(filename)
-        self.update1D(self.current_err, self.errImage, self.errCmap)
 
     def Setup(self):
         self.grid()
         self.master.title("IBEX Viewer")
 
-        title0 = Label(self.master, text="Normalized %s" % self.varname).grid(row=0, column=0, columnspan=2)
+        f = Frame(self.master)
+        f.grid(row=0, column=0, columnspan=2)
+        
+        Label(f, text="Signal").pack(side=LEFT)
+
+        self.varString = StringVar(f)
+        self.varString.set("Select...")
+        sigmenu = OptionMenu(f, self.varString, *self.ibx.varnames, command=lambda value: self.newDataVar(value, True))
+        sigmenu.pack(side=LEFT)
 
         self.varImage = Label(self.master)
         self.varImage.grid(row=1, column=0, columnspan=2)
@@ -136,7 +189,23 @@ class Application(Frame):
 
         hgap = Separator(self.master, orient='horizontal').grid(row=3, column=0, columnspan=2, sticky='ew')
 
-        title1 = Label(self.master, text="%s" % self.errname).grid(row=4, column=0, columnspan=2)
+        f = Frame(self.master)
+        f.grid(row=4, column=0, columnspan=2)
+
+        Label(f, text="Error").pack(side=LEFT)
+        
+        self.errnames = []
+        for vn in self.ibx.varnames:
+          v = self.ibx.Variable(vn)
+          if np.min(v) >= 0 and np.max(v) <= 1:
+            self.errnames.append(vn)
+
+        self.errString = StringVar(f)
+        self.errString.set("Select...")
+        errmenu = OptionMenu(f, self.errString, *self.errnames, command=lambda value: self.newErrorVar(value, True))
+        errmenu.pack(side=LEFT)
+
+        # title1 = Label(self.master, text="Error").grid(row=4, column=0, columnspan=2)
 
         self.errImage = Label(self.master)
         self.errImage.grid(row=6, column=0, columnspan=2)
@@ -210,11 +279,13 @@ class Application(Frame):
         prv.pack(side=LEFT)
 
         menubar = Menu(self.master)
+
         filemenu = Menu(menubar)
         menubar.add_cascade(label='File', menu=filemenu)
         filemenu.add_command(label='Save', command=self.Save)
         filemenu.add_command(label='Save All', command=self.SaveAll)
         filemenu.add_command(label='Quit', command=self.Quit)
+
         self.master.config(menu=menubar)
 
         self.fig = Figure(figsize = (4.5, 2.5))
@@ -231,34 +302,61 @@ class Application(Frame):
         self.histoFrame.pack(fill=BOTH)
 
     def updateHistos(self):
-        self.var_histo_plot1.clear()
-        self.var_histo_plot1.hist(self.current_var.flatten(), bins=30)
-        self.err_histo_plot1.clear()
-        self.err_histo_plot1.hist(self.current_err.flatten(), bins=30)
+        if self.varname:
+          self.var_histo_plot1.clear()
+          self.var_histo_plot1.hist(self.var.flatten(), bins=30)
+        if self.errname:
+          self.err_histo_plot1.clear()
+          self.err_histo_plot1.hist(self.err.flatten(), bins=30)
         self.histo_canvas.draw()
 
-    def __init__(self, ibx, varname, errname):
-        self.master = Tk()
+    def __init__(self, ibx):
+        #
         self.ibx = ibx
+        self.current_index = 0
+        self.varname = None
+        self.errname = None
+        #
+        self.var = None
+        self.normalized_var = None
+        self.err = None
+        #
+        self.master = Tk()
         Frame.__init__(self, self.master)
-        self.varname = varname
-        self.errname = errname
         self.Setup()
+        #
+        # set up default colormaps
+        #
         r = np.arange(256)/255.0
         self.varCmap = np.column_stack([r]*3)
         self.errCmap = np.column_stack([r]*3)
         r = np.arange(1024)/1023.0
         self.TwoDCmap = np.column_stack([r]*(3*1024))
         self.TwoDCmapName = 'grayscale'
+        #
+        # set up data
+        #
+        # self.newDataVar(varname, False)
+        # self.newErrorVar(errname, False)
+        if 'flux' in self.ibx.varnames:
+          self.newDataVar('flux', False)
+          self.varString.set('flux')
+        if 'flux_re' in self.errnames:
+          self.newErrorVar('flux_re', False)
+          self.errString.set('flux_re')
+        #
+        self.updateTimestep(0)
+        #
+        # set up GUI
+        #
+        self.currentDataset.set(ibx.names[self.current_index])
         self.update2DCmap()
-        self.Update(0)
-        
-if len(sys.argv) != 4:
-  print('syntax: %s data.ibx varname errname' % sys.argv[0])
+        self.updateGUI()
+
+if len(sys.argv) != 2:
+  print('syntax: %s data.ibx' % sys.argv[0])
   sys.exit(0)
 
 ibx = IBEX.Read(sys.argv[1])
-print(np.min(ibx.vardata[ibx.varnames.index('exposure_time')]), np.max(ibx.vardata[ibx.varnames.index('exposure_time')]))
-
-app = Application(ibx, sys.argv[2], sys.argv[3])
+app = Application(ibx)
 app.mainloop()
