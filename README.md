@@ -59,6 +59,8 @@ Internally, these are [1024,1024,3] arrays that map a signal (the Y axis) and as
 
 ## Command-line Tools
 
+Command line tools are included in the repo.   TO use these conveniently, add the repo root directory to your PATH environment variable.
+
 - **Csv2Ibx csv [csv...] ibx** read a set of csv files in original format into an IBEX instance and save it as an ibx file
 - **ApplyCmap2D ibx cmap sigvar relvar directory** Apply the given 2D colormap to the specified variables in the input data file, produucing one image file for each timestep
 - **Ibex2Gscale ibx varname** render a grey-scale image of the named variable of each timestep of the data.
@@ -70,10 +72,42 @@ Internally, these are [1024,1024,3] arrays that map a signal (the Y axis) and as
 
 Several tools are included to create derived variables using the IBEX class' Calculate method.
 
-- **BracketExposure in.ibx low high max_unreliability out.ibx**  Creates a derived unreliability variable from the *exposure time* variable.  Values less than *low* are considered fully unreliable, and receive the maximum unreliability value.   Values greater than *high* are considered fully reliable, and receive a value of 0.  Intervening values are interpolated linearly.
-- **HistoEq in.ibx varname out.ibx** applies a histogram equalization algorithm to the named variable, producing a derived variable named ***varname_he**.
+- **BracketExposure in.ibx low high max_unreliability out.ibx**  Creates a derived unreliability variable from the *exposure_time* variable.  Values less than *low* are considered fully unreliable, and receive the maximum unreliability value.   Values greater than *high* are considered fully reliable, and receive a value of 0.  Intervening values are interpolated linearly.
+- **HistoEq in.ibx varname out.ibx** applies a histogram equalization algorithm to the named variable, producing a derived variable named **varname_he**.
 - **RelativeError in.ibx signame abserrname out.ibx** Divides the absolute error variable named by *abserrname* by the signal variable named *signame*  producing a relative error variable named *sigvar_re*.
-- **Normalize in.ibx varname out.ibx** Normalize the named variable *across all timesteps*, producing a derived varaiable named *varname_n*.
+- **Normalize in.ibx varname out.ibx** Normalize the named variable *across all timesteps*, producing a derived variable named *varname_n*.
 
+** IBEX_Viewer
+
+This application is used for testing colormaps against the data in an ibx file.  Run it **IBEX_Viewer file.ibx**.
+
+![Alt text](,/IBEX.png?raw=true "IBEX")
+
+The tool shows four main panels.   
+
+### Upper Left
+
+The upper left panel shows the *signal* data.  The pulldown at the top allows the user to select the signal variable.   By default, *flux* (if it exists) is used.    All data variables are available in the pulldown.   A ***...*** button at the bottom allows you to select a one-dimensioned colormap to use in this panel.
+
+
+### Lower Left
+
+The upper left panel shows the *unreliability* data.  The pulldown at the top allows the user to select a variable to use for unreliability.   By default, *flux_re* (if it exists) is used.    All data variables *that are entirely contained in the range[0 ... 1] are available in the pulldown.   A ***...*** button at the bottom allows you to select a one-dimensioned colormap to use in this panel.
+
+### Upper right 
+
+This shows the result of 2D mapping the signal and unreliability data.  A ***...*** button allows the user to select a 2D colormap for this panel.
+
+### Lower right
+
+On the left are histograms of the signal data (top) and the unreliability data (bottom) and the current 2D colormap.
+
+### Bottom
+
+A ribbon at the bottom allows the yuser to choose a specifc timestep or to step through the set of timesteps.
+
+### The File pulldown
+
+A pulldown on the menu bar presents the ability to save an image of the current timestep data with the current 2D colormap applied, and the ability to save *all* timesteps with the given 2D colormap.
 
 
