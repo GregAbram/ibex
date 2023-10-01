@@ -2,7 +2,7 @@
 
 ![Alt text](./IBEX.png?raw=true "IBEX")
 
-This repo contains tools for manipulating IBEX data.   In general, these tools were developed to explore the representation of unreliability in the data using a 2D colormap.  These tools are based on a Python class IBEX.   Ancillary tools are contained in the colortools.py file.
+This repo contains tools for manipulating IBEX data.   In general, these tools were developed to explore the representation of uncertainty in the data using a 2D colormap.  These tools are based on a Python class IBEX.   Ancillary tools are contained in the colortools.py file.
 
 ## Usage
 
@@ -24,7 +24,7 @@ for i in `seq 2 6` ; do
   rm [abcd].ibx
 done
 ```
-This creates a separate .ibx file for each ESA level, with additional variables containing the histogram-equalized version of ***flux*** variable (***flux_he***), and two bracketted unreliability variables.
+This creates a separate .ibx file for each ESA level, with additional variables containing the histogram-equalized version of ***flux*** variable (***flux_he***), and two bracketted uncertainty variables.
 
 ## IBEX Class
 
@@ -56,7 +56,7 @@ The IBEX class represents an IBEX dataset.  This includes a set of *timesteps*. 
 
 ## Maps
 
-Core to this work is the application of color maps to the data contained in the IBEX data.   Three maps are relevant: *1D colormaps* that map individual variable values to colors; *2D colormaps* which map two variables (think *signal* in the Y axis and *unreliability* in the X axis) giving color, and *opacity maps*, mapping a range of normalized values to opacities.  Tools for handling these maps (as well as other random tools) are in the colortools.py file.
+Core to this work is the application of color maps to the data contained in the IBEX data.   Three maps are relevant: *1D colormaps* that map individual variable values to colors; *2D colormaps* which map two variables (think *signal* in the Y axis and *uncertainty* in the X axis) giving color, and *opacity maps*, mapping a range of normalized values to opacities.  Tools for handling these maps (as well as other random tools) are in the colortools.py file.
 
 ### 1D Colormaps
 
@@ -75,17 +75,17 @@ Internally, these are [256] numpy arrays containing normalized opacities for eac
 
 ### 2D Colormaps
 
-Internally, these are [1024,1024,3] arrays that map a signal (the Y axis) and associated unreliability (the X axis) to a color.  Externally, they are represented as binary data assumed to contained 1024*1024*3 float32 arrays.
+Internally, these are [1024,1024,3] arrays that map a signal (the Y axis) and associated uncertainty (the X axis) to a color.  Externally, they are represented as binary data assumed to contained 1024*1024*3 float32 arrays.
 
 - **ReadColormap2D(filename)** Read a 2D colormap from a file
 - **WriteColormap2D(filename)** Write a 2D colormap to a file
-- **ApplyColormap(signal, unreliability, cmap)** Apply the 2D colormap to equal-sized arrays containing normalized signal and unreliability values.
+- **ApplyColormap(signal, uncertainty, cmap)** Apply the 2D colormap to equal-sized arrays containing normalized signal and uncertainty values.
 
 ## Command-line Tools
 
 Command line tools are included in the repo.   TO use these conveniently, add the repo root directory to your PATH environment variable.
 
-- **MkMap sigmap [-r] [-nodisplay] [-e unreliability_map] [-e unreliability_value] [-o omap]** Create a 2D colormap.  The map will interpolate from the sigmap on the left to the unreliability map on the right, which may be a constant greyscale value given by the -e parameter, defaulting to 0.4.  By default the 2D colormap will be displayed unless the [-nodisplay] flag is given.  The interpolation will be linear unless the [-o omap] argument is given; if it is, it will control the interpolation.   If the [-r] option is given, the sigmap will be reversed.  The output file will be named according to the sigmap, the unreliability mapping, and the interpolation model.
+- **MkMap sigmap [-r] [-nodisplay] [-e uncertainty_map] [-E uncertainty_value] [-o omap]** Create a 2D colormap.  The map will interpolate from the sigmap on the left to the uncertainty map on the right, which may be a constant greyscale value given by the -E parameter, defaulting to 0.4.  By default the 2D colormap will be displayed unless the [-nodisplay] flag is given.  The interpolation will be linear unless the [-o omap] argument is given; if it is, it will control the interpolation.   If the [-r] option is given, the sigmap will be reversed.  The output file will be named according to the sigmap, the uncertainty mapping, and the interpolation model.
 - **Csv2Ibx csv [csv...] ibx** read a set of csv files in original format into an IBEX instance and save it as an ibx file
 - **ApplyCmap2D ibx cmap sigvar relvar directory** Apply the given 2D colormap to the specified variables in the input data file, produucing one image file for each timestep
 - **Ibex2Gscale ibx varname** render a grey-scale image of the named variable of each timestep of the data.
@@ -97,7 +97,7 @@ Command line tools are included in the repo.   TO use these conveniently, add th
 
 Several tools are included to create derived variables using the IBEX class' Calculate method.
 
-- **BracketExposure in.ibx low high max_unreliability out.ibx**  Creates a derived unreliability variable from the *exposure_time* variable.  Values less than *low* are considered fully unreliable, and receive the maximum unreliability value.   Values greater than *high* are considered fully reliable, and receive a value of 0.  Intervening values are interpolated linearly.
+- **BracketExposure in.ibx low high max_uncertainty out.ibx**  Creates a derived uncertainty variable from the *exposure_time* variable.  Values less than *low* are considered fully unreliable, and receive the maximum uncertainty value.   Values greater than *high* are considered fully reliable, and receive a value of 0.  Intervening values are interpolated linearly.
 - **HistoEq in.ibx varname out.ibx** applies a histogram equalization algorithm to the named variable, producing a derived variable named **varname_he**.
 - **RelativeError in.ibx signame abserrname out.ibx** Divides the absolute error variable named by *abserrname* by the signal variable named *signame*  producing a relative error variable named *sigvar_re*.
 - **Normalize in.ibx varname out.ibx** Normalize the named variable *across all timesteps*, producing a derived variable named *varname_n*.
@@ -115,15 +115,15 @@ The upper left panel shows the *signal* data.  The pulldown at the top allows th
 
 ### Lower Left
 
-The upper left panel shows the *unreliability* data.  The pulldown at the top allows the user to select a variable to use for unreliability.   By default, *flux_re* (if it exists) is used.    All data variables *that are entirely contained in the range[0 ... 1] are available in the pulldown.   A ***...*** button at the bottom allows you to select a one-dimensioned colormap to use in this panel.
+The upper left panel shows the *uncertainty* data.  The pulldown at the top allows the user to select a variable to use for uncertainty.   By default, *flux_re* (if it exists) is used.    All data variables *that are entirely contained in the range[0 ... 1] are available in the pulldown.   A ***...*** button at the bottom allows you to select a one-dimensioned colormap to use in this panel.
 
 ### Upper right 
 
-This shows the result of 2D mapping the signal and unreliability data.  A ***...*** button allows the user to select a 2D colormap for this panel.
+This shows the result of 2D mapping the signal and uncertainty data.  A ***...*** button allows the user to select a 2D colormap for this panel.
 
 ### Lower right
 
-On the left are histograms of the signal data (top) and the unreliability data (bottom) and the current 2D colormap.
+On the left are histograms of the signal data (top) and the uncertainty data (bottom) and the current 2D colormap.
 
 ### Bottom
 
