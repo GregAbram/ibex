@@ -10,7 +10,6 @@ def syntax(a):
 if len(sys.argv) == 1:
   syntax(sys.argv[0])
 
-pdb.set_trace()
 if sys.argv[1] == '-float':
   for name in sys.argv[2:]:
     cmap = ct.load_colormap(name)
